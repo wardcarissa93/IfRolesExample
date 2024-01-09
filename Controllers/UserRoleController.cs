@@ -1,12 +1,14 @@
 ﻿using IfRolesExample.Data;
 using IfRolesExample.Repositories;
 using IfRolesExample.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IfRolesExample.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class UserRoleController : Controller
     {
         private readonly ApplicationDbContext _context;
