@@ -55,5 +55,4 @@ namespace IfRolesExample.Repositories
             return Enumerable.Empty<RoleVM>();
         }
     }
-
 }

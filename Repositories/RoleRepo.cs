@@ -76,6 +76,37 @@ namespace IfRolesExample.Repositories
                 CreateRole(ADMIN);
             }
         }
-    }
 
+        public bool IsRoleAssigned(string roleId)
+        {
+            return _context.UserRoles.Any(ur => ur.RoleId == roleId);
+        }
+
+
+        public bool DeleteRole(string roleId)
+        {
+            bool isSuccess = true;
+
+            try
+            {
+                var role = _context.Roles.Find(roleId);
+
+                if (role != null)
+                {
+                    _context.Roles.Remove(role);
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    isSuccess = false;
+                }
+            }
+            catch (Exception)
+            {
+                isSuccess = false;
+            }
+
+            return isSuccess;
+        }
+    }
 }

@@ -23,6 +23,9 @@
         {
             <tr>
                 <td>@Html.DisplayFor(modelItem => item.RoleName)</td>
+                <td>
+                    @Html.ActionLink("Delete", "DeleteUserRole", new { userName = ViewBag.UserName, roleName = item.RoleName })
+                </td>
             </tr>
         }
     </tbody>

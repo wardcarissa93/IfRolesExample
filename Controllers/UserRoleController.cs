@@ -14,14 +14,17 @@ namespace IfRolesExample.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly MyRegisteredUserRepo _myRegisteredUserRepo;
 
         public UserRoleController(ApplicationDbContext context
                                  , UserManager<IdentityUser> userManager
-                                 , RoleManager<IdentityRole> roleManager)
+                                 , RoleManager<IdentityRole> roleManager
+                                 , MyRegisteredUserRepo myRegisteredUserRepo)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _myRegisteredUserRepo = myRegisteredUserRepo;
         }
 
         public ActionResult Index()
@@ -38,7 +41,9 @@ namespace IfRolesExample.Controllers
             UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
             var roles = await userRoleRepo.GetUserRolesAsync(userName);
 
-            ViewBag.UserName = userName;
+            var userFullName = _myRegisteredUserRepo.GetUserFullNameByEmail(userName);
+
+            ViewBag.UserName = userFullName;
 
             return View(roles);
         }
@@ -114,5 +119,23 @@ namespace IfRolesExample.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeleteUserRole(string userName, string roleName)
+        {
+            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
+
+            if (await userRoleRepo.RemoveUserRoleAsync(userName, roleName))
+            {
+                TempData["SuccessMessage"] = "UserRole deleted successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to delete UserRole.";
+            }
+
+            // Redirect to the UserRoles Detail page again
+            return RedirectToAction("Detail", new { userName });
+        }
     }
 }
+

@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IfRolesExample.Data;
 using IfRolesExample.Models;
+using IfRolesExample.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +33,7 @@ namespace IfRolesExample.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly ApplicationDbContext _db;
+        private readonly MyRegisteredUserRepo _myRegisteredUserRepo;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
@@ -39,7 +41,8 @@ namespace IfRolesExample.Areas.Identity.Pages.Account
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            ApplicationDbContext db)
+            ApplicationDbContext db,
+            MyRegisteredUserRepo myRegisteredUserRepo)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -48,6 +51,7 @@ namespace IfRolesExample.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
             _db = db;
+            _myRegisteredUserRepo = myRegisteredUserRepo;
         }
 
         /// <summary>
@@ -138,8 +142,7 @@ namespace IfRolesExample.Areas.Identity.Pages.Account
                         FirstName = Input.FirstName,
                         LastName = Input.LastName
                     };
-                    _db.MyRegisteredUsers.Add(registerUser);
-                    _db.SaveChanges();
+                    _myRegisteredUserRepo.AddMyRegisteredUser(registerUser);
 
                     _logger.LogInformation("User created a new account with password.");
 
