@@ -20,3 +20,7 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+#create-btn-div {
+  margin-top: 1.5em;
+}
