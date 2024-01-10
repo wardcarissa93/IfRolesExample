@@ -3,11 +3,8 @@
 @{
     ViewData["Title"] = "User Roles";
 }
-
 <h1>User Roles</h1>
-<p>
-    <a asp-action="Create">Create New User Role</a>
-</p>
+<p><a asp-action="Create">Assign User Roles</a></p>
 <table class="table">
     <thead>
         <tr>
@@ -21,7 +18,8 @@
             <tr>
                 <td>@item.Email</td>
                 <td>
-                    @Html.ActionLink("View Roles"
+                    @Html.ActionLink(
+                             "View Roles"
                              , "Detail"
                              , new { userName = item.Email })
                 </td>
@@ -29,3 +27,4 @@
         }
     </tbody>
 </table>
+

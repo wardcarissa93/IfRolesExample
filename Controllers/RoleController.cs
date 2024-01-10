@@ -12,23 +12,22 @@ namespace IfRolesExample.Controllers
 
         public RoleController(ApplicationDbContext db)
         {
-            this._db = db;
+            _db = db;
         }
 
-        public IActionResult Index()
+        public ActionResult Index(string message = "")
         {
             RoleRepo roleRepo = new RoleRepo(_db);
-            var roles = roleRepo.GetAllRoles();
+            ViewBag.Message = message;
 
-            return View(roles);
+            return View(roleRepo.GetAllRoles());
         }
 
-        [HttpGet]
+
         public ActionResult Create()
         {
             return View();
         }
-
 
         [HttpPost]
         public ActionResult Create(RoleVM roleVM)
@@ -36,61 +35,70 @@ namespace IfRolesExample.Controllers
             if (ModelState.IsValid)
             {
                 RoleRepo roleRepo = new RoleRepo(_db);
-                bool isSuccess = roleRepo.CreateRole(roleVM.RoleName);
 
-                if (isSuccess)
+                try
                 {
-                    return RedirectToAction(nameof(Index));
+                    bool isSuccess = roleRepo.CreateRole(roleVM.RoleName);
+
+                    if (isSuccess)
+                    {
+                        ViewBag.Message = "Role created successfully.";
+                        return RedirectToAction(nameof(Index), new { message = ViewBag.Message });
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Role creation failed.");
+                        ModelState.AddModelError("", "The role may already exist.");
+                    }
                 }
-                else
+                catch (Exception)
                 {
-                    ModelState.AddModelError("", "Role creation failed." +
-                                             " The role may already exist.");
+                    ModelState.AddModelError("", "Role creation failed.");
+                    ModelState.AddModelError("", "An unexpected error occurred.");
                 }
             }
+
             return View(roleVM);
         }
 
-        [HttpGet]
-        public IActionResult Delete(string id)
+
+        public ActionResult Delete(string roleName)
         {
             RoleRepo roleRepo = new RoleRepo(_db);
+            RoleVM roleVM = roleRepo.GetRole(roleName);
 
-            var role = roleRepo.GetRole(id);
-
-            if (role == null)
+            if (roleVM == null)
             {
-                // Handle the case where the role with the provided id is not found
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
 
-            return View(role);
+            return View(roleVM);
         }
 
         [HttpPost]
-        public IActionResult Delete(RoleVM role)
+        public ActionResult Delete(RoleVM roleVM)
         {
             RoleRepo roleRepo = new RoleRepo(_db);
 
-            // Check if the role is assigned to any user
-            if (roleRepo.IsRoleAssigned(role.Id))
+            try
             {
-                TempData["ErrorMessage"] = "Role cannot be deleted because it is assigned to a user.";
-                return RedirectToAction(nameof(Index));
-            }
+                // Check if the role is assigned to any user
+                if (roleRepo.IsRoleAssigned(roleVM.RoleName))
+                {
+                    ViewBag.DeleteErrorMessage = "Cannot delete role. It is assigned to a user.";
+                    return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteErrorMessage });
+                }
 
-            // If the role is not assigned, proceed with deletion
-            bool isSuccess = roleRepo.DeleteRole(role.Id);
+                _ = roleRepo.DeleteRole(roleVM.RoleName);
 
-            if (isSuccess)
-            {
-                TempData["SuccessMessage"] = "Role deleted successfully.";
-                return RedirectToAction(nameof(Index));
+                ViewBag.DeleteSuccessMessage = "Role deleted successfully.";
+
+                return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteSuccessMessage });
             }
-            else
+            catch (Exception)
             {
-                TempData["ErrorMessage"] = "Role deletion failed.";
-                return RedirectToAction(nameof(Index));
+                ViewBag.DeleteErrorMessage = "An error occurred while deleting the role.";
+                return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteErrorMessage });
             }
         }
 

@@ -2,27 +2,22 @@
 
 @{
     ViewData["Title"] = "User Roles Detail";
+    string message = ViewBag.Message;
 }
 
 <h3>User: @ViewBag.UserName</h3>
 
+@if (message.Length > 0)
+{
+    <div class="alert alert-success" role="alert">
+        @ViewBag.Message
+    </div>
+}
 <p>
-    @Html.ActionLink("Assign Roles", "Create", new { userName = @ViewBag.UserName })
+    @Html.ActionLink("Assign Roles"
+            , "Create"
+            , new { userName = @ViewBag.UserName })
 </p>
-
-@if (TempData.ContainsKey("SuccessMessage"))
-{
-    <div class="alert alert-success">
-        @TempData["SuccessMessage"]
-    </div>
-}
-
-@if (TempData.ContainsKey("ErrorMessage"))
-{
-    <div class="alert alert-danger">
-        @TempData["ErrorMessage"]
-    </div>
-}
 
 <table class="table">
     <thead>
@@ -34,13 +29,15 @@
         @foreach (var item in Model)
         {
             <tr>
-                <td>@Html.DisplayFor(modelItem => item.RoleName)</td>
                 <td>
-                    <form asp-action="Delete" asp-route-email="@ViewBag.Email" asp-route-roleName="@item.RoleName" method="post">
-                        <input type="submit" value="Delete" class="btn btn-danger" style="padding: 0 0.35em;" />
-                    </form>
+                    @Html.DisplayFor(modelItem => item.RoleName)
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    @Html.ActionLink("Delete", "Delete", new
+                        { /* id=item.PrimaryKey */ })
                 </td>
             </tr>
         }
     </tbody>
 </table>
+

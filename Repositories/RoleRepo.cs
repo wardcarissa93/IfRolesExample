@@ -1,112 +1,119 @@
 ﻿using IfRolesExample.Data;
 using IfRolesExample.ViewModels;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace IfRolesExample.Repositories
+public class RoleRepo
 {
-    public class RoleRepo
+    private readonly ApplicationDbContext _db;
+
+    public RoleRepo(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        this._db = context;
+        CreateInitialRole();
+    }
 
-        public RoleRepo(ApplicationDbContext context)
-        {
-            this._context = context;
-            CreateInitialRole();
-        }
-
-        public List<RoleVM> GetAllRoles()
-        {
-            var roles = _context.Roles.Select(r => new RoleVM
+    public IEnumerable<RoleVM> GetAllRoles()
+    {
+        var roles =
+            _db.Roles.Select(r => new RoleVM
             {
-                Id = r.Id,
                 RoleName = r.Name
-            }).ToList();
+            });
 
-            return roles;
+        return roles;
+    }
+
+    public RoleVM GetRole(string roleName)
+    {
+        var role = _db.Roles.Where(r => r.Name == roleName)
+                            .FirstOrDefault();
+
+        if (role != null)
+        {
+            return new RoleVM() { RoleName = role.Name };
+        }
+        return null;
+    }
+
+    public bool CreateRole(string roleName)
+    {
+        bool isSuccess = true;
+
+        try
+        {
+            _db.Roles.Add(new IdentityRole
+            {
+                Id = roleName.ToLower(),
+                Name = roleName,
+                NormalizedName = roleName.ToUpper()
+            });
+            _db.SaveChanges();
+        }
+        catch (Exception)
+        {
+            isSuccess = false;
         }
 
-        public RoleVM GetRole(string roleName)
+        return isSuccess;
+    }
+
+    public SelectList GetRoleSelectList()
+    {
+        var roles = GetAllRoles().Select(r => new
+        SelectListItem
         {
-            var role =
-                _context.Roles.Where(r => r.Name == roleName)
-                              .FirstOrDefault();
+            Value = r.RoleName,
+            Text = r.RoleName
+        });
+
+        var roleSelectList = new SelectList(roles,
+                                           "Value",
+                                           "Text");
+        return roleSelectList;
+    }
+
+    public void CreateInitialRole()
+    {
+        const string ADMIN = "Admin";
+
+        var role = GetRole(ADMIN);
+
+        if (role == null)
+        {
+            CreateRole(ADMIN);
+        }
+    }
+    // Logic for role deletion can be included here.
+
+    public bool DeleteRole(string roleName)
+    {
+        bool isSuccess = true;
+
+        try
+        {
+            var role = _db.Roles.FirstOrDefault(r => r.Name == roleName);
 
             if (role != null)
             {
-                return new RoleVM()
-                {
-                    RoleName = role.Name
-                                    ,
-                    Id = role.Id
-                };
+                _db.Roles.Remove(role);
+                _db.SaveChanges();
             }
-            return null;
-        }
-
-        public bool CreateRole(string roleName)
-        {
-            bool isSuccess = true;
-
-            try
-            {
-                _context.Roles.Add(new IdentityRole
-                {
-                    Name = roleName,
-                    Id = roleName,
-                    NormalizedName = roleName.ToUpper()
-                });
-                _context.SaveChanges();
-            }
-            catch (Exception)
+            else
             {
                 isSuccess = false;
             }
-
-            return isSuccess;
         }
-
-        public void CreateInitialRole()
+        catch (Exception)
         {
-            const string ADMIN = "Admin";
-
-            var role = GetRole(ADMIN);
-
-            if (role == null)
-            {
-                CreateRole(ADMIN);
-            }
+            isSuccess = false;
         }
 
-        public bool IsRoleAssigned(string roleId)
-        {
-            return _context.UserRoles.Any(ur => ur.RoleId == roleId);
-        }
+        return isSuccess;
+    }
 
-
-        public bool DeleteRole(string roleId)
-        {
-            bool isSuccess = true;
-
-            try
-            {
-                var role = _context.Roles.Find(roleId);
-
-                if (role != null)
-                {
-                    _context.Roles.Remove(role);
-                    _context.SaveChanges();
-                }
-                else
-                {
-                    isSuccess = false;
-                }
-            }
-            catch (Exception)
-            {
-                isSuccess = false;
-            }
-
-            return isSuccess;
-        }
+    public bool IsRoleAssigned(string roleName)
+    {
+        return _db.UserRoles.Any(ur => ur.RoleId == roleName);
     }
 }

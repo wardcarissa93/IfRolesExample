@@ -1,25 +1,39 @@
 ﻿using IfRolesExample.Data;
 using IfRolesExample.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IfRolesExample.Repositories
 {
     public class UserRepo
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _db;
 
-        public UserRepo(ApplicationDbContext context)
+        public UserRepo(ApplicationDbContext db)
         {
-            this._context = context;
+            this._db = db;
         }
 
-        public List<UserVM> GetAllUsers()
+        public IEnumerable<UserVM> GetAllUsers()
         {
-            var userEmails = _context.Users.Select(u => new UserVM
-            {
-                Email = u.Email
-            }).ToList();
+            IEnumerable<UserVM> users =
+            _db.Users.Select(u => new UserVM { Email = u.Email });
 
-            return userEmails;
+            return users;
+        }
+
+        public SelectList GetUserSelectList()
+        {
+            IEnumerable<SelectListItem> users =
+                GetAllUsers().Select(u => new SelectListItem
+                {
+                    Value = u.Email,
+                    Text = u.Email
+                });
+
+            SelectList roleSelectList = new SelectList(users,
+                                                      "Value",
+                                                      "Text");
+            return roleSelectList;
         }
     }
 }

@@ -1,27 +1,17 @@
 ﻿@model IEnumerable<IfRolesExample.ViewModels.RoleVM>
 
 @{
-    ViewData["Title"] = "Index";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-
-    // Check for success and error messages in TempData
-    var successMessage = TempData["SuccessMessage"] as string;
-    var errorMessage = TempData["ErrorMessage"] as string;
+    ViewData["Title"] = "Roles";
+    string message = ViewBag.Message;
+    bool isSuccess = message.StartsWith("Role deleted successfully");
 }
 
 <h1>Roles</h1>
 
-@if (!string.IsNullOrEmpty(successMessage))
+@if (!string.IsNullOrEmpty(message))
 {
-    <div class="alert alert-success" role="alert">
-        @successMessage
-    </div>
-}
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger" role="alert">
-        @errorMessage
+    <div class="alert @(message.StartsWith("Role created successfully") ? "alert-success" : "alert-danger")" role="alert">
+        @message
     </div>
 }
 
@@ -31,9 +21,6 @@
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Id)
-            </th>
             <th>
                 @Html.DisplayNameFor(model => model.RoleName)
             </th>
@@ -45,16 +32,12 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Id)
-                </td>
-                <td>
                     @Html.DisplayFor(modelItem => item.RoleName)
                 </td>
                 <td>
-                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a asp-action="Delete" asp-route-roleName="@item.RoleName">Delete</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
-
