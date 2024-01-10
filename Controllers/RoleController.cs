@@ -68,7 +68,6 @@ namespace IfRolesExample.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Delete(RoleVM role)
         {
             RoleRepo roleRepo = new RoleRepo(_db);

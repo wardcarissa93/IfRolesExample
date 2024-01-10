@@ -44,6 +44,7 @@ namespace IfRolesExample.Controllers
             var userFullName = _myRegisteredUserRepo.GetUserFullNameByEmail(userName);
 
             ViewBag.UserName = userFullName;
+            ViewBag.Email = userName;
 
             return View(roles);
         }
@@ -120,11 +121,13 @@ namespace IfRolesExample.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteUserRole(string userName, string roleName)
+        public async Task<IActionResult> Delete(string email, string roleName)
         {
             UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
 
-            if (await userRoleRepo.RemoveUserRoleAsync(userName, roleName))
+            bool isDeleteSuccessful = await userRoleRepo.RemoveUserRoleAsync(email, roleName);
+
+            if (isDeleteSuccessful)
             {
                 TempData["SuccessMessage"] = "UserRole deleted successfully.";
             }
@@ -134,7 +137,7 @@ namespace IfRolesExample.Controllers
             }
 
             // Redirect to the UserRoles Detail page again
-            return RedirectToAction("Detail", new { userName });
+            return RedirectToAction("Detail", new { userName = email });
         }
     }
 }

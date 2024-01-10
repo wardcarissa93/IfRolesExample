@@ -7,10 +7,22 @@
 <h3>User: @ViewBag.UserName</h3>
 
 <p>
-    @Html.ActionLink("Assign Roles"
-            , "Create"
-            , new { userName = @ViewBag.UserName })
+    @Html.ActionLink("Assign Roles", "Create", new { userName = @ViewBag.UserName })
 </p>
+
+@if (TempData.ContainsKey("SuccessMessage"))
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData.ContainsKey("ErrorMessage"))
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
 
 <table class="table">
     <thead>
@@ -24,7 +36,9 @@
             <tr>
                 <td>@Html.DisplayFor(modelItem => item.RoleName)</td>
                 <td>
-                    @Html.ActionLink("Delete", "DeleteUserRole", new { userName = ViewBag.UserName, roleName = item.RoleName })
+                    <form asp-action="Delete" asp-route-email="@ViewBag.Email" asp-route-roleName="@item.RoleName" method="post">
+                        <input type="submit" value="Delete" class="btn btn-danger" style="padding: 0 0.35em;" />
+                    </form>
                 </td>
             </tr>
         }
