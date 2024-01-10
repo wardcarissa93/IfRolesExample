@@ -3,14 +3,14 @@
 @{
     ViewData["Title"] = "Roles";
     string message = ViewBag.Message;
-    bool isSuccess = message.StartsWith("Role deleted successfully");
+    bool isSuccess = message.StartsWith("Role deleted ");
 }
 
 <h1>Roles</h1>
 
 @if (!string.IsNullOrEmpty(message))
 {
-    <div class="alert @(message.StartsWith("Role created successfully") ? "alert-success" : "alert-danger")" role="alert">
+    <div class="alert @((isSuccess || message == "Role deleted successfully.") ? "alert-success" : "alert-danger")" role="alert">
         @message
     </div>
 }

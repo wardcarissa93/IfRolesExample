@@ -2,7 +2,6 @@
 using IfRolesExample.Repositories;
 using IfRolesExample.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Packaging.Core;
 
 namespace IfRolesExample.Controllers
 {
@@ -23,7 +22,6 @@ namespace IfRolesExample.Controllers
             return View(roleRepo.GetAllRoles());
         }
 
-
         public ActionResult Create()
         {
             return View();
@@ -36,31 +34,20 @@ namespace IfRolesExample.Controllers
             {
                 RoleRepo roleRepo = new RoleRepo(_db);
 
-                try
-                {
-                    bool isSuccess = roleRepo.CreateRole(roleVM.RoleName);
+                bool isSuccess = roleRepo.CreateRole(roleVM.RoleName);
 
-                    if (isSuccess)
-                    {
-                        ViewBag.Message = "Role created successfully.";
-                        return RedirectToAction(nameof(Index), new { message = ViewBag.Message });
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", "Role creation failed.");
-                        ModelState.AddModelError("", "The role may already exist.");
-                    }
-                }
-                catch (Exception)
+                if (isSuccess)
                 {
-                    ModelState.AddModelError("", "Role creation failed.");
-                    ModelState.AddModelError("", "An unexpected error occurred.");
+                    return RedirectToAction(nameof(Index), new { message = "Role deleted successfully." });
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Role creation failed. The role may already exist.");
                 }
             }
 
             return View(roleVM);
         }
-
 
         public ActionResult Delete(string roleName)
         {
@@ -80,27 +67,23 @@ namespace IfRolesExample.Controllers
         {
             RoleRepo roleRepo = new RoleRepo(_db);
 
-            try
+            if (roleRepo.IsRoleAssigned(roleVM.RoleName))
             {
-                // Check if the role is assigned to any user
-                if (roleRepo.IsRoleAssigned(roleVM.RoleName))
-                {
-                    ViewBag.DeleteErrorMessage = "Cannot delete role. It is assigned to a user.";
-                    return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteErrorMessage });
-                }
-
-                _ = roleRepo.DeleteRole(roleVM.RoleName);
-
-                ViewBag.DeleteSuccessMessage = "Role deleted successfully.";
-
-                return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteSuccessMessage });
+                ModelState.AddModelError("", "Cannot delete role. It is assigned to a user.");
+                return View(roleVM); // Return the Delete view with the error message
             }
-            catch (Exception)
+
+            bool isSuccess = roleRepo.DeleteRole(roleVM.RoleName);
+
+            if (isSuccess)
             {
-                ViewBag.DeleteErrorMessage = "An error occurred while deleting the role.";
-                return RedirectToAction(nameof(Index), new { message = ViewBag.DeleteErrorMessage });
+                return RedirectToAction(nameof(Index), new { message = "Role deleted successfully." });
+            }
+            else
+            {
+                ModelState.AddModelError("", $"An error occurred while deleting the role: Role not found.");
+                return View(roleVM); // Return the Delete view with the error message
             }
         }
-
     }
 }

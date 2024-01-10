@@ -2,6 +2,9 @@
 using IfRolesExample.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 public class RoleRepo
 {
@@ -15,101 +18,69 @@ public class RoleRepo
 
     public IEnumerable<RoleVM> GetAllRoles()
     {
-        var roles =
-            _db.Roles.Select(r => new RoleVM
-            {
-                RoleName = r.Name
-            });
-
-        return roles;
+        return _db.Roles.Select(r => new RoleVM { RoleName = r.Name });
     }
 
     public RoleVM GetRole(string roleName)
     {
-        var role = _db.Roles.Where(r => r.Name == roleName)
-                            .FirstOrDefault();
+        var role = _db.Roles.FirstOrDefault(r => r.Name == roleName);
 
-        if (role != null)
-        {
-            return new RoleVM() { RoleName = role.Name };
-        }
-        return null;
+        return role != null ? new RoleVM { RoleName = role.Name } : null;
     }
 
     public bool CreateRole(string roleName)
     {
-        bool isSuccess = true;
+        var normalizedRoleName = roleName.ToUpper();
 
-        try
+        if (_db.Roles.Any(r => r.NormalizedName == normalizedRoleName))
         {
-            _db.Roles.Add(new IdentityRole
-            {
-                Id = roleName.ToLower(),
-                Name = roleName,
-                NormalizedName = roleName.ToUpper()
-            });
-            _db.SaveChanges();
-        }
-        catch (Exception)
-        {
-            isSuccess = false;
+            return false; // Role already exists
         }
 
-        return isSuccess;
+        _db.Roles.Add(new IdentityRole
+        {
+            Id = normalizedRoleName,
+            Name = roleName,
+            NormalizedName = normalizedRoleName
+        });
+
+        _db.SaveChanges();
+
+        return true;
     }
 
     public SelectList GetRoleSelectList()
     {
-        var roles = GetAllRoles().Select(r => new
-        SelectListItem
+        return new SelectList(GetAllRoles().Select(r => new SelectListItem
         {
             Value = r.RoleName,
             Text = r.RoleName
-        });
-
-        var roleSelectList = new SelectList(roles,
-                                           "Value",
-                                           "Text");
-        return roleSelectList;
+        }), "Value", "Text");
     }
 
     public void CreateInitialRole()
     {
         const string ADMIN = "Admin";
 
-        var role = GetRole(ADMIN);
-
-        if (role == null)
+        if (GetRole(ADMIN) == null)
         {
             CreateRole(ADMIN);
         }
     }
-    // Logic for role deletion can be included here.
 
     public bool DeleteRole(string roleName)
     {
-        bool isSuccess = true;
+        var role = _db.Roles.FirstOrDefault(r => r.Name == roleName);
 
-        try
+        if (role == null)
         {
-            var role = _db.Roles.FirstOrDefault(r => r.Name == roleName);
-
-            if (role != null)
-            {
-                _db.Roles.Remove(role);
-                _db.SaveChanges();
-            }
-            else
-            {
-                isSuccess = false;
-            }
-        }
-        catch (Exception)
-        {
-            isSuccess = false;
+            return false; // Role not found
         }
 
-        return isSuccess;
+        _db.Roles.Remove(role);
+        _db.SaveChanges();
+
+        return true;
     }
 
     public bool IsRoleAssigned(string roleName)
@@ -117,3 +88,4 @@ public class RoleRepo
         return _db.UserRoles.Any(ur => ur.RoleId == roleName);
     }
 }
+

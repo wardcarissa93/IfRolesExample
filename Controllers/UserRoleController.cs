@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace IfRolesExample.Controllers
 {
@@ -14,10 +17,9 @@ namespace IfRolesExample.Controllers
         private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> _userManager;
 
-        public UserRoleController(ApplicationDbContext context,
-                                 UserManager<IdentityUser> userManager)
+        public UserRoleController(ApplicationDbContext db, UserManager<IdentityUser> userManager)
         {
-            _db = context;
+            _db = db;
             _userManager = userManager;
         }
 
@@ -29,16 +31,14 @@ namespace IfRolesExample.Controllers
             return View(users);
         }
 
-        public async Task<IActionResult> Detail(string userName,
-                                                string message = "")
+        public async Task<IActionResult> Detail(string userName, string message = "")
         {
-            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
-
-
+            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager, _db);
             var roles = await userRoleRepo.GetUserRolesAsync(userName);
 
             ViewBag.Message = message;
             ViewBag.UserName = userName;
+            ViewBag.FullName = await userRoleRepo.GetUserFullNameAsync(userName);
 
             return View(roles);
         }
@@ -47,7 +47,6 @@ namespace IfRolesExample.Controllers
         {
             RoleRepo roleRepo = new RoleRepo(_db);
             ViewBag.RoleSelectList = roleRepo.GetRoleSelectList();
-
 
             UserRepo userRepo = new UserRepo(_db);
             ViewBag.UserSelectList = userRepo.GetUserSelectList();
@@ -58,41 +57,19 @@ namespace IfRolesExample.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(UserRoleVM userRoleVM)
         {
-            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
+            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager, _db);
 
             if (ModelState.IsValid)
             {
-                try
+                var result = await userRoleRepo.CreateUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
+
+                if (result.Success)
                 {
-                    // Check if the user already has the specified role
-                    var user = await _userManager.FindByEmailAsync(userRoleVM.Email);
-                    var hasRole = await _userManager.IsInRoleAsync(user, userRoleVM.RoleName);
-
-                    if (hasRole)
-                    {
-                        ModelState.AddModelError("", $"User {userRoleVM.Email} already has the role {userRoleVM.RoleName}.");
-                    }
-                    else
-                    {
-                        var addUR = await userRoleRepo.AddUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
-
-                        string message = $"{userRoleVM.RoleName} permissions" +
-                                        $" successfully added to " +
-                                        $"{userRoleVM.Email}.";
-
-                        return RedirectToAction("Detail", "UserRole",
-                            new
-                            {
-                                userName = userRoleVM.Email,
-                                message = message
-                            });
-                    }
+                    string message = $"{userRoleVM.RoleName} permissions successfully added to {userRoleVM.Email}.";
+                    return RedirectToAction("Detail", "UserRole", new { userName = userRoleVM.Email, message = message });
                 }
-                catch
-                {
-                    ModelState.AddModelError("", "UserRole creation failed.");
-                    ModelState.AddModelError("", "The Role may exist for this user.");
-                }
+
+                ModelState.AddModelError("", result.ErrorMessage);
             }
 
             RoleRepo roleRepo = new RoleRepo(_db);
@@ -104,33 +81,15 @@ namespace IfRolesExample.Controllers
             return View();
         }
 
-
         [HttpPost]
         public async Task<IActionResult> Delete(UserRoleVM userRoleVM)
         {
-            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
-
-            try
-            {
-                bool isSuccess = await userRoleRepo.RemoveUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
-
-                if (isSuccess)
-                {
-                    ViewBag.DeleteSuccessMessage = $"{userRoleVM.RoleName} permissions successfully removed from {userRoleVM.Email}.";
-                }
-                else
-                {
-                    ViewBag.DeleteErrorMessage = $"Failed to remove {userRoleVM.RoleName} permissions from {userRoleVM.Email}.";
-                }
-            }
-            catch (Exception)
-            {
-                ViewBag.DeleteErrorMessage = "An error occurred while removing UserRole.";
-            }
+            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager, _db);
+            var result = await userRoleRepo.RemoveUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
 
             var roles = await userRoleRepo.GetUserRolesAsync(userRoleVM.Email);
 
-            ViewBag.Message = ViewBag.DeleteSuccessMessage ?? ViewBag.DeleteErrorMessage;
+            ViewBag.Message = result.Success ? "UserRole removed successfully." : result.ErrorMessage;
             ViewBag.UserName = userRoleVM.Email;
 
             return View("Detail", roles);
