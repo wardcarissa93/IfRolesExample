@@ -31,10 +31,13 @@
             <tr>
                 <td>
                     @Html.DisplayFor(modelItem => item.RoleName)
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    @Html.ActionLink("Delete", "Delete", new
-                        { /* id=item.PrimaryKey */ })
+                </td>
+                <td>
+                    <form asp-controller="UserRole" asp-action="Delete" method="post">
+                        <input type="hidden" name="Email" value="@ViewBag.UserName" />
+                        <input type="hidden" name="RoleName" value="@item.RoleName" />
+                        <button type="submit" class="btn btn-danger" style="padding: 0 0.375em">Delete</button>
+                    </form>
                 </td>
             </tr>
         }

@@ -9,7 +9,7 @@ namespace IfRolesExample.ViewModels
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Role Name is required.")]
         [Display(Name = "Role Name")]
         public string RoleName { get; set; }
     }

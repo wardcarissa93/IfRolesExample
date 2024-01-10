@@ -54,6 +54,7 @@ namespace IfRolesExample.Controllers
 
             return View();
         }
+
         [HttpPost]
         public async Task<IActionResult> Create(UserRoleVM userRoleVM)
         {
@@ -63,26 +64,34 @@ namespace IfRolesExample.Controllers
             {
                 try
                 {
-                    var addUR =
-                    await userRoleRepo.AddUserRoleAsync(userRoleVM.Email,
-                                                        userRoleVM.RoleName);
+                    // Check if the user already has the specified role
+                    var user = await _userManager.FindByEmailAsync(userRoleVM.Email);
+                    var hasRole = await _userManager.IsInRoleAsync(user, userRoleVM.RoleName);
 
-                    string message = $"{userRoleVM.RoleName} permissions" +
-                                     $" successfully added to " +
-                                     $"{userRoleVM.Email}.";
+                    if (hasRole)
+                    {
+                        ModelState.AddModelError("", $"User {userRoleVM.Email} already has the role {userRoleVM.RoleName}.");
+                    }
+                    else
+                    {
+                        var addUR = await userRoleRepo.AddUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
 
-                    return RedirectToAction("Detail", "UserRole",
-                                      new
-                                      {
-                                          userName = userRoleVM.Email,
-                                          message = message
-                                      });
+                        string message = $"{userRoleVM.RoleName} permissions" +
+                                        $" successfully added to " +
+                                        $"{userRoleVM.Email}.";
+
+                        return RedirectToAction("Detail", "UserRole",
+                            new
+                            {
+                                userName = userRoleVM.Email,
+                                message = message
+                            });
+                    }
                 }
                 catch
                 {
                     ModelState.AddModelError("", "UserRole creation failed.");
-                    ModelState.AddModelError("", "The Role may exist " +
-                                                 "for this user.");
+                    ModelState.AddModelError("", "The Role may exist for this user.");
                 }
             }
 
@@ -93,6 +102,38 @@ namespace IfRolesExample.Controllers
             ViewBag.UserSelectList = userRepo.GetUserSelectList();
 
             return View();
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(UserRoleVM userRoleVM)
+        {
+            UserRoleRepo userRoleRepo = new UserRoleRepo(_userManager);
+
+            try
+            {
+                bool isSuccess = await userRoleRepo.RemoveUserRoleAsync(userRoleVM.Email, userRoleVM.RoleName);
+
+                if (isSuccess)
+                {
+                    ViewBag.DeleteSuccessMessage = $"{userRoleVM.RoleName} permissions successfully removed from {userRoleVM.Email}.";
+                }
+                else
+                {
+                    ViewBag.DeleteErrorMessage = $"Failed to remove {userRoleVM.RoleName} permissions from {userRoleVM.Email}.";
+                }
+            }
+            catch (Exception)
+            {
+                ViewBag.DeleteErrorMessage = "An error occurred while removing UserRole.";
+            }
+
+            var roles = await userRoleRepo.GetUserRolesAsync(userRoleVM.Email);
+
+            ViewBag.Message = ViewBag.DeleteSuccessMessage ?? ViewBag.DeleteErrorMessage;
+            ViewBag.UserName = userRoleVM.Email;
+
+            return View("Detail", roles);
         }
     }
 }
